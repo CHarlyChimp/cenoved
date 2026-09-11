@@ -1,0 +1,8 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { GET } from '../app/go/[id]/route';
+import { products } from '../lib/seed-data';
+test('valid offer redirects only to the stored merchant URL',async()=>{const o=products[0].offers[0];const response=await GET(new Request('https://demo.test/go/'+o.id+'?url=https://untrusted.test'),{params:Promise.resolve({id:o.id})});assert.equal(response.status,302);assert.equal(response.headers.get('location'),o.shopUrl);assert.equal(response.headers.get('cache-control'),'no-store');});
+test('unknown and unavailable offers do not redirect',async()=>{assert.equal((await GET(new Request('https://demo.test/go/missing'),{params:Promise.resolve({id:'missing'})})).status,404);const o=products.flatMap(p=>p.offers).find(o=>!o.inStock)!;assert.equal((await GET(new Request('https://demo.test/go/'+o.id),{params:Promise.resolve({id:o.id})})).status,410);});
+test('stale offer does not redirect',async()=>{const o=products[0].offers[0];try{o.isStale=true;assert.equal((await GET(new Request('https://demo.test/go/'+o.id),{params:Promise.resolve({id:o.id})})).status,410);}finally{delete o.isStale;}});
+test('malformed, unapproved and credential-bearing URLs fail closed',async()=>{const o=products[0].offers[0],original=o.shopUrl;try{for(const invalid of ['javascript:alert(1)','https://www.dns-shop.ru.evil.test/','https://user:password@www.dns-shop.ru/']){o.shopUrl=invalid;const response=await GET(new Request('https://demo.test/go/'+o.id),{params:Promise.resolve({id:o.id})});assert.equal(response.status,422);assert.equal(response.headers.get('location'),null);}}finally{o.shopUrl=original;}});

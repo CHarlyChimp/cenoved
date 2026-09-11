@@ -1,0 +1,2 @@
+merchant_id,merchant_offer_id,category,brand,manufacturer_part_number,gtin,model,variant,price_rub,currency,in_stock,product_url,observed_at
+synthetic-shop,offer-001,laptops,ExampleTech,ET-L14-16-512,05901234123457,ExampleBook 14,"{""screen_inches"":14,""ram_gb"":16,""storage_gb"":512,""region"":""RU""}",79990,RUB,true,https://shop.example.test/products/offer-001,2026-09-11T12:00:00+03:00

@@ -1,0 +1,183 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id          String    @id
+  name        String
+  slug        String    @unique
+  description String
+  attributes  Json
+  products    Product[]
+}
+
+model Product {
+  id                     String                  @id
+  slug                   String                  @unique
+  categoryId             String
+  category               Category                @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  name                   String
+  brand                  String
+  images                 String[]
+  imageCaption           String
+  description            String
+  specs                  Json
+  popularity             Int                     @default(0)
+  manufacturerPartNumber String?
+  gtin                   String?
+  regionCode             String?
+  offers                 Offer[]
+  history                PriceHistory[]
+  reviews                Review[]
+  merchantIdentities     MerchantOfferIdentity[]
+
+  @@index([categoryId, brand])
+  @@index([gtin])
+  @@index([brand, manufacturerPartNumber])
+}
+
+model Offer {
+  id               String                 @id
+  productId        String
+  product          Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+  shopName         String
+  shopUrl          String
+  price            Int
+  currency         String                 @default("RUB")
+  inStock          Boolean                @default(true)
+  isStale          Boolean                @default(false)
+  sourceKind       OfferSource            @default(DEMO)
+  observedAt       DateTime?
+  updatedAt        DateTime               @updatedAt
+  delivery         String
+  merchantId       String?
+  merchant         Merchant?              @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  merchantIdentity MerchantOfferIdentity?
+  clicks           Click[]
+
+  @@index([productId, shopName])
+  @@index([productId, inStock, price])
+  @@index([merchantId, isStale])
+}
+
+model PriceHistory {
+  id         String             @id @default(cuid())
+  productId  String
+  product    Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
+  price      Int
+  date       DateTime           @db.Date
+  sourceKind PriceHistorySource @default(DEMO)
+
+  @@unique([productId, date, sourceKind])
+}
+
+model Review {
+  id        String   @id
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  author    String
+  rating    Int
+  text      String
+  date      DateTime
+
+  @@index([productId, date])
+}
+
+model Click {
+  id        String   @id @default(cuid())
+  offerId   String
+  offer     Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([offerId, createdAt])
+}
+
+enum OfferSource {
+  DEMO
+  MERCHANT_FEED
+}
+
+enum PriceHistorySource {
+  DEMO
+  MERCHANT_FEED
+}
+
+enum FeedMode {
+  FULL
+  INCREMENTAL
+}
+
+enum FeedImportStatus {
+  SUCCEEDED
+  FAILED
+}
+
+enum MerchantOfferMatchStatus {
+  MATCHED
+  REVIEW
+}
+
+model Merchant {
+  id             String                  @id
+  name           String
+  allowedDomains String[]
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  imports        FeedImport[]
+  identities     MerchantOfferIdentity[]
+  offers         Offer[]
+}
+
+model FeedImport {
+  id              String           @id @default(cuid())
+  merchantId      String
+  merchant        Merchant         @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  contractVersion Int
+  mode            FeedMode
+  fileHash        String
+  fetchedAt       DateTime
+  completedAt     DateTime         @default(now())
+  status          FeedImportStatus
+  totalRows       Int
+  acceptedRows    Int
+  rejectedRows    Int
+  matchedRows     Int
+  reviewRows      Int
+  errorLog        Json
+
+  @@unique([merchantId, fileHash, mode])
+  @@index([merchantId, completedAt])
+}
+
+model MerchantOfferIdentity {
+  id                     String                   @id @default(cuid())
+  merchantId             String
+  merchant               Merchant                 @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  merchantOfferId        String
+  productId              String?
+  product                Product?                 @relation(fields: [productId], references: [id], onDelete: SetNull)
+  offerId                String?                  @unique
+  offer                  Offer?                   @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  category               String
+  brand                  String
+  manufacturerPartNumber String
+  gtin                   String?
+  model                  String
+  variant                Json
+  matchStatus            MerchantOfferMatchStatus
+  reviewReason           String?
+  lastObservedAt         DateTime
+  active                 Boolean                  @default(true)
+  stale                  Boolean                  @default(false)
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+
+  @@unique([merchantId, merchantOfferId])
+  @@index([productId, matchStatus])
+  @@index([merchantId, active, stale])
+}

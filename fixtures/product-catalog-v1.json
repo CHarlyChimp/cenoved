@@ -1,0 +1,16 @@
+[
+  {
+    "id": "synthetic-examplebook-14-16-512-ru",
+    "categoryId": "laptops",
+    "brand": "ExampleTech",
+    "manufacturerPartNumber": "ET-L14-16-512",
+    "gtin": "05901234123457",
+    "regionCode": "RU",
+    "specs": {
+      "screen": 14,
+      "ram": 16,
+      "storage": 512,
+      "region": "RU"
+    }
+  }
+]

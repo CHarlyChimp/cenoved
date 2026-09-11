@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "merchants": [
+    {
+      "id": "synthetic-shop",
+      "name": "Синтетический магазин (только тест)",
+      "allowedDomains": ["shop.example.test"]
+    }
+  ]
+}
