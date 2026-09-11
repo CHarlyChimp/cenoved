@@ -14,11 +14,13 @@ export type MatchResult =
   | { status: 'matched'; productId: string; rule: 'GTIN' | 'BRAND_MPN_VARIANT' }
   | { status: 'review'; reason: string };
 
+export type FeedIdentity = Pick<FeedRecord, 'category' | 'brand' | 'manufacturerPartNumber' | 'gtin' | 'variant'>;
+
 export function normalizeIdentifier(value: string) {
   return value.normalize('NFKC').toLocaleUpperCase('ru').replace(/[^\p{L}\p{N}]/gu, '');
 }
 
-function variantCompatible(record: FeedRecord, candidate: ProductMatchCandidate) {
+export function variantCompatible(record: FeedIdentity, candidate: ProductMatchCandidate) {
   const expected = record.variant;
   const screen = Number(candidate.specs.screen ?? candidate.specs.screen_inches);
   const ram = Number(candidate.specs.ram ?? candidate.specs.ram_gb);
@@ -31,7 +33,7 @@ function variantCompatible(record: FeedRecord, candidate: ProductMatchCandidate)
     && normalizeIdentifier(region) === normalizeIdentifier(expected.region);
 }
 
-function identityCompatible(record: FeedRecord, candidate: ProductMatchCandidate) {
+export function identityCompatible(record: FeedIdentity, candidate: ProductMatchCandidate) {
   return candidate.categoryId === record.category
     && normalizeIdentifier(candidate.brand) === normalizeIdentifier(record.brand)
     && variantCompatible(record, candidate);

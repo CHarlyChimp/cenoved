@@ -18,6 +18,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "feed:import": "node --import tsx scripts/import-merchant-csv.ts",
+    "matches:review": "node --import tsx scripts/review-merchant-matches.ts",
     "reports:manage": "node --import tsx scripts/manage-price-reports.ts",
     "test": "node --import tsx --test tests/*.test.ts",
     "typecheck": "tsc --noEmit"
