@@ -9,7 +9,7 @@ import { useComparison } from './app-shell';
 import { money,currentPrice,formatSpec,validateComparison,type CatalogData } from '@/lib/catalog';
 export function Comparison({products,categories,initialIds}:{initialIds:string[]}&CatalogData) {
  const {selected,replace,ready,clear}=useComparison(),[ids,setIds]=useState(initialIds),[onlyDifferences,setOnlyDifferences]=useState(false);
- useEffect(()=>{if(initialIds.length){const valid=validateComparison(initialIds,products);if(valid.valid){replace(products.filter(p=>initialIds.includes(p.id)));setIds(initialIds);}}else if(ready)setIds(selected.map(p=>p.id));},[ready,initialIds.join(',')]);
+ useEffect(()=>{const handle=setTimeout(()=>{if(initialIds.length){const valid=validateComparison(initialIds,products);if(valid.valid){replace(products.filter(p=>initialIds.includes(p.id)));setIds(initialIds);}}else if(ready)setIds(selected.map(p=>p.id));},0);return()=>clearTimeout(handle);},[ready,initialIds.join(',')]);
  const check=validateComparison(ids,products),items=ids.map(id=>products.find(p=>p.id===id)).filter((p):p is typeof products[number]=>!!p),category=categories.find(c=>c.id===items[0]?.categoryId);
  function remove(id:string){const next=ids.filter(x=>x!==id);setIds(next);replace(products.filter(p=>next.includes(p.id)));window.history.replaceState(null,'','/compare'+(next.length?'?ids='+next.map(encodeURIComponent).join(','):''));}
  function reset(){setIds([]);clear();window.history.replaceState(null,'','/compare');}

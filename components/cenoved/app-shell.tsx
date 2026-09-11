@@ -15,7 +15,7 @@ function validSelected(v:unknown):v is Selected {if(!v||typeof v!=='object')retu
 export function AppShell({children}:{children:ReactNode}) {
  const [selected,setSelected]=useState<Selected[]>([]),[ready,setReady]=useState(false),[query,setQuery]=useState('');
  const router=useRouter(),pathname=usePathname();
- useEffect(()=>{try{const v=JSON.parse(localStorage.getItem('cenoved-compare-v1')||'[]');if(Array.isArray(v)){const safe=v.filter(validSelected).slice(0,4);if(new Set(safe.map(p=>p.categoryId)).size<=1)setSelected(safe);}}catch{}setReady(true);},[]);
+ useEffect(()=>{let active=true;queueMicrotask(()=>{if(!active)return;try{const v=JSON.parse(localStorage.getItem('cenoved-compare-v1')||'[]');if(Array.isArray(v)){const safe=v.filter(validSelected).slice(0,4);if(new Set(safe.map(p=>p.categoryId)).size<=1)setSelected(safe);}}catch{}setReady(true);});return()=>{active=false;};},[]);
  useEffect(()=>{if(ready)try{localStorage.setItem('cenoved-compare-v1',JSON.stringify(selected));}catch{}},[selected,ready]);
  function toggle(p:Selected){
   if(selected.some(x=>x.id===p.id)){setSelected(selected.filter(x=>x.id!==p.id));return;}

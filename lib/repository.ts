@@ -1,4 +1,5 @@
 import type { Category, Product, Offer, CatalogData } from './catalog';
+import type { PriceReportInput } from './price-report';
 import * as demo from './demo-repository';
 
 function databaseMode(){const mode=process.env.DATA_SOURCE||'demo';if(!['demo','postgres'].includes(mode))throw new Error('DATA_SOURCE must be demo or postgres');if(mode==='postgres'&&!process.env.DATABASE_URL)throw new Error('DATABASE_URL required');return mode==='postgres';}
@@ -13,3 +14,19 @@ export async function getCatalog():Promise<CatalogData>{
 export async function getProduct(slug:string):Promise<Product|null>{if(!databaseMode())return demo.getProduct(slug);const p=await (await db()).product.findUnique({where:{slug},include});return p?serializeProduct(p):null;}
 export async function getOffer(id:string):Promise<Offer|null>{if(!databaseMode())return demo.getOffer(id);const o=await (await db()).offer.findUnique({where:{id}});return o?{...o,updatedAt:o.updatedAt.toISOString()}:null;}
 export async function recordClick(offerId:string){if(!databaseMode())return false;await(await db()).click.create({data:{offerId}});return true;}
+export async function createPriceReport(input:PriceReportInput):Promise<{status:'accepted';id:string;repeated:boolean}|{status:'not_found'}|{status:'unavailable'}>{
+ if(!databaseMode())return {status:'unavailable'};
+ const prisma=await db();
+ const previous=await prisma.priceReport.findUnique({where:{clientRequestId:input.clientRequestId},select:{id:true}});
+ if(previous)return {status:'accepted',id:previous.id,repeated:true};
+ const offer=await prisma.offer.findUnique({where:{id:input.offerId},select:{id:true,price:true,sourceKind:true,observedAt:true,updatedAt:true}});
+ if(!offer)return {status:'not_found'};
+ if(offer.sourceKind!=='MERCHANT_FEED')return {status:'unavailable'};
+ const report=await prisma.priceReport.upsert({
+  where:{clientRequestId:input.clientRequestId},
+  create:{clientRequestId:input.clientRequestId,offerId:offer.id,reason:input.reason,displayedPrice:offer.price,observedPrice:input.observedPrice,offerObservedAt:offer.observedAt??offer.updatedAt},
+  update:{},
+  select:{id:true},
+ });
+ return {status:'accepted',id:report.id,repeated:false};
+}

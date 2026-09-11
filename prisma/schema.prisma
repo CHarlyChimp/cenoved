@@ -59,6 +59,7 @@ model Offer {
   merchant         Merchant?              @relation(fields: [merchantId], references: [id], onDelete: Restrict)
   merchantIdentity MerchantOfferIdentity?
   clicks           Click[]
+  priceReports     PriceReport[]
 
   @@index([productId, shopName])
   @@index([productId, inStock, price])
@@ -122,6 +123,19 @@ enum MerchantOfferMatchStatus {
   REVIEW
 }
 
+enum PriceReportReason {
+  PRICE_MISMATCH
+  NOT_AVAILABLE
+  WRONG_PRODUCT
+  OTHER
+}
+
+enum PriceReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
 model Merchant {
   id             String                  @id
   name           String
@@ -180,4 +194,22 @@ model MerchantOfferIdentity {
   @@unique([merchantId, merchantOfferId])
   @@index([productId, matchStatus])
   @@index([merchantId, active, stale])
+}
+
+model PriceReport {
+  id              String            @id @default(cuid())
+  clientRequestId String            @unique
+  offerId         String
+  offer           Offer             @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  reason          PriceReportReason
+  displayedPrice  Int
+  observedPrice   Int?
+  offerObservedAt DateTime?
+  status          PriceReportStatus @default(OPEN)
+  createdAt       DateTime          @default(now())
+  resolvedAt      DateTime?
+  resolutionNote  String?
+
+  @@index([status, createdAt])
+  @@index([offerId, createdAt])
 }
